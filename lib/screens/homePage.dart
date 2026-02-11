@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'detailPage.dart';
 import '../database/database_helper.dart';
 import '../models/post_model.dart';
+import '../widgets/chirp_card.dart';
 
 class HomePage extends StatefulWidget {
   final int userId;
@@ -91,54 +92,30 @@ class _HomePageState extends State<HomePage> {
               itemCount: posts.length,
               itemBuilder: (_, index) {
                 final post = posts[index];
-
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: ListTile(
-                    title: Text(post.content),
-                    onTap: () async {
-                      await Future.delayed(Duration(seconds: 5));
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => Detailpage(post: post),
-                        ),
-                      ).then((_) => loadPosts());
-                    },
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () async {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => EditPage(post: post),
-                              ),
-                            );
-                            if (result == true) loadPosts();
-                          },
-                          child: const Text('Edit'),
-                        ),
-                        const SizedBox(width: 8),
-                        OutlinedButton(
-                          onPressed: () async {
-                            await db.deletePost(post.id!);
-                            loadPosts();
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red,
-                          ),
-                          child: const Text('Delete'),
-                        ),
-                      ],
+              return ChirpCard(
+                post: post,
+                onTap: () async {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => Detailpage(post: post),
                     ),
-                  ),
-                );
+                  ).then((_) => loadPosts());
+                },
+                onEdit: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => EditPage(post: post),
+                    ),
+                  );
+                  if (result == true) loadPosts();
+                },
+                onDelete: () async {
+                  await db.deletePost(post.id!);
+                  loadPosts();
+                },
+              );
               },
             ),
           ),
