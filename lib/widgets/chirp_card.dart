@@ -3,9 +3,10 @@ import '../models/post_model.dart';
 
 class ChirpCard extends StatelessWidget {
   final Post post;
-  final VoidCallback onTap;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final Future<void> Function()? onTap;
+  final Future<void> Function()? onEdit;
+  final Future<void> Function()? onDelete;
+
 
   const ChirpCard({
     super.key,

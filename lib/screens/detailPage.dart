@@ -17,6 +17,7 @@ class _DetailpageState extends State<Detailpage> {
   final TextEditingController _controller = TextEditingController();
 
   List<Comment> comments = [];
+  bool isLoading = true;
 
   @override
   void initState() {

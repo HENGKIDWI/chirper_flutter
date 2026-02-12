@@ -4,6 +4,7 @@ import 'detailPage.dart';
 import '../database/database_helper.dart';
 import '../models/post_model.dart';
 import '../widgets/chirp_card.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class HomePage extends StatefulWidget {
   final int userId;
@@ -19,6 +20,7 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _controller = TextEditingController();
 
   List<Post> posts = [];
+  late bool isLoading = true;
 
   @override
   void initState() {
@@ -27,20 +29,30 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> loadPosts() async {
+    setState(() {
+      isLoading = true;
+    });
     final data = await db.getPosts();
     setState(() {
       posts = data;
+      isLoading = false;
     });
   }
 
   Future<void> addPost() async {
     if (_controller.text.isEmpty) return;
 
+    setState(() {
+      isLoading = true;
+    });
     final post = Post(content: _controller.text, userId: widget.userId);
 
     await db.insertPost(post);
     _controller.clear();
     loadPosts();
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -88,39 +100,91 @@ class _HomePageState extends State<HomePage> {
 
           // LIST CHIRP
           Expanded(
-            child: ListView.builder(
-              itemCount: posts.length,
-              itemBuilder: (_, index) {
-                final post = posts[index];
-              return ChirpCard(
-                post: post,
-                onTap: () async {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => Detailpage(post: post),
-                    ),
-                  ).then((_) => loadPosts());
-                },
-                onEdit: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => EditPage(post: post),
-                    ),
-                  );
-                  if (result == true) loadPosts();
-                },
-                onDelete: () async {
-                  await db.deletePost(post.id!);
-                  loadPosts();
-                },
-              );
-              },
+            child: Skeletonizer(
+                enabled: isLoading,
+                child: listChirp(context)
             ),
           ),
         ],
       ),
     );
   }
-}
+
+//   ListView listChirp(BuildContext context) {
+//     return ListView.builder(
+//             itemCount: posts.length,
+//             itemBuilder: (_, index) {
+//               final post = posts[index];
+//             return ChirpCard(
+//               post: post,
+//               onTap: () async {
+//                 await Future.delayed(Duration(seconds: 5));
+//                 Navigator.push(
+//                   context,
+//                   MaterialPageRoute(
+//                     builder: (_) => Detailpage(post: post),
+//                   ),
+//                 ).then((_) => loadPosts());
+//               },
+//               onEdit: () async {
+//                 final result = await Navigator.push(
+//                   context,
+//                   MaterialPageRoute(
+//                     builder: (_) => EditPage(post: post),
+//                   ),
+//                 );
+//                 if (result == true) loadPosts();
+//               },
+//               onDelete: () async {
+//                 await db.deletePost(post.id!);
+//                 loadPosts();
+//               },
+//             );
+//             },
+//           );
+//   }
+// }
+
+ListView listChirp(BuildContext context) {
+  final displayList = isLoading
+      ? List.generate(5, (_) => Post(content: 'Loading...', userId: 0))
+      : posts;
+
+  return ListView.builder(
+    itemCount: displayList.length,
+    itemBuilder: (_, index) {
+      final post = displayList[index];
+
+      return ChirpCard(
+        post: post,
+        onTap: isLoading
+            ? null
+            : () async {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => Detailpage(post: post),
+            ),
+          ).then((_) => loadPosts());
+        },
+        onEdit: isLoading
+            ? null
+            : () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => EditPage(post: post),
+            ),
+          );
+          if (result == true) loadPosts();
+        },
+        onDelete: isLoading
+            ? null
+            : () async {
+          await db.deletePost(post.id!);
+          loadPosts();
+        },
+      );
+    },
+  );
+}}
