@@ -1,4 +1,4 @@
-import 'package:chirper/screens/homePage.dart';
+import 'package:chirper/screens/home_page.dart';
 import 'package:flutter/material.dart';
 
 void main() {

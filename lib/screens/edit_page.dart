@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../database/database_helper.dart';
 import '../models/post_model.dart';
 
@@ -14,11 +15,27 @@ class EditPage extends StatefulWidget {
 class _EditPageState extends State<EditPage> {
   final db = DatabaseHelper.instance;
   late TextEditingController _controller;
+  bool isLoading = false;
 
+  @override
   @override
   void initState() {
     super.initState();
+    _initPage();
+  }
+
+  Future<void> _initPage() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    await Future.delayed(const Duration(seconds: 10));
+
     _controller = TextEditingController(text: widget.post.content);
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
   Future<void> updateChirp() async {
@@ -43,12 +60,15 @@ class _EditPageState extends State<EditPage> {
           IconButton(icon: const Icon(Icons.check), onPressed: updateChirp),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: TextField(
-          controller: _controller,
-          maxLines: 5,
-          decoration: const InputDecoration(border: OutlineInputBorder()),
+      body: Skeletonizer(
+        enabled: isLoading,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: TextField(
+            controller: _controller,
+            maxLines: 5,
+            decoration: const InputDecoration(border: OutlineInputBorder()),
+          ),
         ),
       ),
     );
