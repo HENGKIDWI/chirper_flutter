@@ -1,4 +1,5 @@
 import 'package:chirper/screens/home_page.dart';
+import 'package:chirper/screens/splash_page.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -15,7 +16,10 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: const HomePage(userId: 1),
+      routes: {
+        '/': (context) => const SplashPage(),
+        '/home': (context) => const HomePage(userId: 1),
+      },
     );
   }
 }

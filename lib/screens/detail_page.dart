@@ -1,3 +1,4 @@
+import 'package:chirper/widgets/top_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../database/database_helper.dart';
@@ -30,8 +31,9 @@ class _DetailpageState extends State<Detailpage> {
     setState(() {
       isLoading = true;
     });
-    await Future.delayed(const Duration(seconds: 5));
+    await Future.delayed(const Duration(seconds: 1));
     final data = await db.getCommentsByPost(widget.post.id!);
+    if (!mounted) return;
     setState(() {
       comments = data;
       isLoading = false;
@@ -54,10 +56,7 @@ class _DetailpageState extends State<Detailpage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chirp'),
-        backgroundColor: const Color.fromARGB(255, 72, 43, 237),
-      ),
+      appBar: TopBar(title: "Chirp"),
       body: chirp(),
     );
   }
@@ -103,7 +102,12 @@ class _DetailpageState extends State<Detailpage> {
                 itemCount: comments.length,
                 itemBuilder: (_, index) {
                   final comment = comments[index];
-                  return ListTile(title: Text(comment.content));
+                  return Column(
+                    children: [
+                      ListTile(title: Text(comment.content)),
+                      const Divider(height: 1),
+                    ],
+                  );
                 },
               ),
       ),

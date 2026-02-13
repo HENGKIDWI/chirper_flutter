@@ -5,6 +5,7 @@ import '../database/database_helper.dart';
 import '../models/post_model.dart';
 import '../widgets/chirp_card.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../widgets/top_bar.dart';
 
 class HomePage extends StatefulWidget {
   final int userId;
@@ -17,7 +18,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final db = DatabaseHelper.instance;
-  final TextEditingController _controller = TextEditingController();
+  late TextEditingController _controller;
 
   List<Post> posts = [];
   late bool isLoading = true;
@@ -25,6 +26,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _controller = TextEditingController();
     loadPosts();
   }
 
@@ -58,13 +60,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Latest Chirps',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: const Color.fromARGB(255, 72, 43, 237),
-      ),
+      appBar: TopBar(title: "Latest Chirps"),
       body: Column(
         children: [
           // INPUT CHIRP
@@ -79,6 +75,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // INPUT CHIRP
   Padding inputCard() {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -103,6 +100,10 @@ class _HomePageState extends State<HomePage> {
               child: ElevatedButton(
                 onPressed: addPost,
                 child: const Text('Chirp'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 5, 198, 255),
+                  foregroundColor: Colors.white,
+                ),
               ),
             ),
           ],
@@ -111,6 +112,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // LIST CHIRP
   ListView listChirp(BuildContext context) {
     final displayList = isLoading
         ? List.generate(5, (_) => Post(content: 'Loading...', userId: 0))
@@ -126,6 +128,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // cHIRP CARD
   ChirpCard chirpCard(Post post, BuildContext context) {
     return ChirpCard(
       post: post,
@@ -168,6 +171,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // DELETE ALERT DIALOG
   AlertDialog alertDelete(BuildContext context) {
     return AlertDialog(
       title: const Text('Hapus Chirp'),
@@ -182,12 +186,12 @@ class _HomePageState extends State<HomePage> {
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             textStyle: const TextStyle(color: Colors.white),
-            backgroundColor: Colors.red,
+            backgroundColor: const Color.fromARGB(255, 73, 20, 233),
           ),
           onPressed: () {
             Navigator.pop(context, true);
           },
-          child: const Text('Hapus'),
+          child: const Text('Hapus', style: TextStyle(color: Colors.white)),
         ),
       ],
     );

@@ -1,3 +1,4 @@
+import 'package:chirper/widgets/top_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../database/database_helper.dart';
@@ -14,14 +15,14 @@ class EditPage extends StatefulWidget {
 
 class _EditPageState extends State<EditPage> {
   final db = DatabaseHelper.instance;
-  late TextEditingController _controller;
+  late TextEditingController _controller = TextEditingController();
   bool isLoading = false;
 
-  @override
   @override
   void initState() {
     super.initState();
     _initPage();
+    _controller = TextEditingController(text: widget.post.content);
   }
 
   Future<void> _initPage() async {
@@ -29,9 +30,10 @@ class _EditPageState extends State<EditPage> {
       isLoading = true;
     });
 
-    await Future.delayed(const Duration(seconds: 10));
+    await Future.delayed(const Duration(seconds: 1));
 
     _controller = TextEditingController(text: widget.post.content);
+    if (!mounted) return;
 
     setState(() {
       isLoading = false;
@@ -54,21 +56,30 @@ class _EditPageState extends State<EditPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Chirp'),
-        actions: [
-          IconButton(icon: const Icon(Icons.check), onPressed: updateChirp),
-        ],
-      ),
+      appBar: TopBar(title: "Edit Chirp"),
       body: Skeletonizer(
         enabled: isLoading,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: TextField(
-            controller: _controller,
-            maxLines: 5,
-            decoration: const InputDecoration(border: OutlineInputBorder()),
-          ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _controller,
+                maxLines: 5,
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: updateChirp,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 5, 198, 255),
+              ),
+              child: const Text(
+                "Update Chirp",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
         ),
       ),
     );
