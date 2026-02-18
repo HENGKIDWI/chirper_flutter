@@ -1,7 +1,8 @@
+import 'package:chirper/providers/post_provider.dart';
 import 'package:chirper/screens/edit_page.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'detail_page.dart';
-import '../database/database_helper.dart';
 import '../models/post_model.dart';
 import '../widgets/chirp_card.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -17,48 +18,18 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final db = DatabaseHelper.instance;
   late TextEditingController _controller;
-
-  List<Post> posts = [];
-  late bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController();
-    loadPosts();
-  }
-
-  Future<void> loadPosts() async {
-    setState(() {
-      isLoading = true;
-    });
-    final data = await db.getPosts();
-    setState(() {
-      posts = data;
-      isLoading = false;
-    });
-  }
-
-  Future<void> addPost() async {
-    if (_controller.text.isEmpty) return;
-
-    setState(() {
-      isLoading = true;
-    });
-    final post = Post(content: _controller.text, userId: widget.userId);
-
-    await db.insertPost(post);
-    _controller.clear();
-    loadPosts();
-    setState(() {
-      isLoading = false;
-    });
+    Future.microtask(() => context.read<PostProvider>().fetchPosts());
   }
 
   @override
   Widget build(BuildContext context) {
+    final postProvider = context.watch<PostProvider>();
     return Scaffold(
       appBar: TopBar(title: "Latest Chirps"),
       body: Column(
@@ -68,7 +39,10 @@ class _HomePageState extends State<HomePage> {
 
           // LIST CHIRP
           Expanded(
-            child: Skeletonizer(enabled: isLoading, child: listChirp(context)),
+            child: Skeletonizer(
+              enabled: postProvider.isLoading,
+              child: listChirp(context),
+            ),
           ),
         ],
       ),
@@ -77,6 +51,8 @@ class _HomePageState extends State<HomePage> {
 
   // INPUT CHIRP
   Padding inputCard() {
+    final postProvider = context.watch<PostProvider>();
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Container(
@@ -98,12 +74,24 @@ class _HomePageState extends State<HomePage> {
             Align(
               alignment: Alignment.centerRight,
               child: ElevatedButton(
-                onPressed: addPost,
-                child: const Text('Chirp'),
+                onPressed: postProvider.isLoading
+                    ? null
+                    : () async {
+                        if (_controller.text.isEmpty) return;
+
+                        final post = Post(
+                          content: _controller.text,
+                          userId: widget.userId,
+                        );
+
+                        await postProvider.addPost(post);
+                        _controller.clear();
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 5, 198, 255),
                   foregroundColor: Colors.white,
                 ),
+                child: const Text('Chirp'),
               ),
             ),
           ],
@@ -113,55 +101,60 @@ class _HomePageState extends State<HomePage> {
   }
 
   // LIST CHIRP
-  ListView listChirp(BuildContext context) {
-    final displayList = isLoading
-        ? List.generate(5, (_) => Post(content: 'Loading...', userId: 0))
-        : posts;
+  Widget listChirp(BuildContext context) {
+    final postProvider = context.watch<PostProvider>();
+
+    final displayList = postProvider.isLoading
+        ? List.generate(
+            5,
+            (_) => Post(id: 0, content: "Loading content...", userId: 0),
+          )
+        : postProvider.posts;
 
     return ListView.builder(
       itemCount: displayList.length,
       itemBuilder: (_, index) {
         final post = displayList[index];
-
         return chirpCard(post, context);
       },
     );
   }
 
-  // cHIRP CARD
+  // CHIRP CARD
   ChirpCard chirpCard(Post post, BuildContext context) {
+    final postProvider = context.watch<PostProvider>();
+
     return ChirpCard(
       post: post,
-      onTap: isLoading
+      onTap: postProvider.isLoading
           ? null
           : () async {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => Detailpage(post: post)),
-              ).then((_) => loadPosts());
+              ).then((_) => postProvider.fetchPosts());
             },
-      onEdit: isLoading
+      onEdit: postProvider.isLoading
           ? null
           : () async {
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => EditPage(post: post)),
               );
-              if (result == true) loadPosts();
+              if (result == true) {
+                postProvider.fetchPosts();
+              }
             },
-      onDelete: isLoading
+      onDelete: postProvider.isLoading
           ? null
           : () async {
               final confirm = await showDialog<bool>(
                 context: context,
-                builder: (context) {
-                  return alertDelete(context);
-                },
+                builder: (context) => alertDelete(context),
               );
 
               if (confirm == true) {
-                await db.deletePost(post.id!);
-                loadPosts();
+                await postProvider.deletePost(post.id!);
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Chirp berhasil dihapus')),

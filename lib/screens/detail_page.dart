@@ -1,5 +1,7 @@
+import 'package:chirper/providers/comment_provider.dart';
 import 'package:chirper/widgets/top_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../database/database_helper.dart';
 import '../models/post_model.dart';
@@ -24,7 +26,9 @@ class _DetailpageState extends State<Detailpage> {
   @override
   void initState() {
     super.initState();
-    loadComments();
+    Future.microtask(
+      () => context.read<CommentProvider>().fetchComments(widget.post.id!),
+    );
   }
 
   Future<void> loadComments() async {
@@ -42,15 +46,11 @@ class _DetailpageState extends State<Detailpage> {
 
   Future<void> addComment() async {
     if (_controller.text.isEmpty) return;
-    setState(() {
-      isLoading = true;
-    });
 
     final comment = Comment(content: _controller.text, postId: widget.post.id!);
 
-    await db.insertComment(comment);
+    await context.read<CommentProvider>().addComment(comment);
     _controller.clear();
-    loadComments();
   }
 
   @override
@@ -93,23 +93,28 @@ class _DetailpageState extends State<Detailpage> {
   }
 
   Expanded listKomen() {
+    final commentProvider = context.watch<CommentProvider>();
+
+    final displayList = commentProvider.isLoading
+        ? List.generate(5, (_) => Comment(content: "Loading...", postId: 0))
+        : commentProvider.comments;
+
     return Expanded(
       child: Skeletonizer(
-        enabled: isLoading,
-        child: comments.isEmpty
-            ? const Center(child: Text('Belum ada komentar'))
-            : ListView.builder(
-                itemCount: comments.length,
-                itemBuilder: (_, index) {
-                  final comment = comments[index];
-                  return Column(
-                    children: [
-                      ListTile(title: Text(comment.content)),
-                      const Divider(height: 1),
-                    ],
-                  );
-                },
-              ),
+        enabled: commentProvider.isLoading,
+        child: ListView.builder(
+          itemCount: displayList.length,
+          itemBuilder: (_, index) {
+            final comment = displayList[index];
+
+            return Column(
+              children: [
+                ListTile(title: Text(comment.content)),
+                const Divider(height: 1),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

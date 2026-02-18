@@ -1,7 +1,8 @@
+import 'package:chirper/providers/post_provider.dart';
 import 'package:chirper/widgets/top_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import '../database/database_helper.dart';
 import '../models/post_model.dart';
 
 class EditPage extends StatefulWidget {
@@ -14,34 +15,19 @@ class EditPage extends StatefulWidget {
 }
 
 class _EditPageState extends State<EditPage> {
-  final db = DatabaseHelper.instance;
-  late TextEditingController _controller = TextEditingController();
-  bool isLoading = false;
+  late TextEditingController _controller;
+  bool isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
-    _initPage();
     _controller = TextEditingController(text: widget.post.content);
-  }
-
-  Future<void> _initPage() async {
-    setState(() {
-      isLoading = true;
-    });
-
-    await Future.delayed(const Duration(seconds: 1));
-
-    _controller = TextEditingController(text: widget.post.content);
-    if (!mounted) return;
-
-    setState(() {
-      isLoading = false;
-    });
   }
 
   Future<void> updateChirp() async {
     if (_controller.text.isEmpty) return;
+
+    setState(() => isSubmitting = true);
 
     final updatedPost = Post(
       id: widget.post.id,
@@ -49,7 +35,9 @@ class _EditPageState extends State<EditPage> {
       userId: widget.post.userId,
     );
 
-    await db.updatePost(updatedPost);
+    await context.read<PostProvider>().updatePost(updatedPost);
+
+    if (!mounted) return;
     Navigator.pop(context, true);
   }
 
@@ -57,30 +45,29 @@ class _EditPageState extends State<EditPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: TopBar(title: "Edit Chirp"),
-      body: Skeletonizer(
-        enabled: isLoading,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _controller,
-                maxLines: 5,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-              ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _controller,
+              maxLines: 5,
+              decoration: const InputDecoration(border: OutlineInputBorder()),
             ),
-            ElevatedButton(
-              onPressed: updateChirp,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 5, 198, 255),
-              ),
-              child: const Text(
-                "Update Chirp",
-                style: TextStyle(color: Colors.white),
-              ),
+          ),
+          ElevatedButton(
+            onPressed: isSubmitting ? null : updateChirp,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 5, 198, 255),
             ),
-          ],
-        ),
+            child: isSubmitting
+                ? const CircularProgressIndicator(color: Colors.white)
+                : const Text(
+                    "Update Chirp",
+                    style: TextStyle(color: Colors.white),
+                  ),
+          ),
+        ],
       ),
     );
   }
