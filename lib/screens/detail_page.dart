@@ -27,6 +27,7 @@ class _DetailpageState extends State<Detailpage> {
   void initState() {
     super.initState();
     Future.microtask(
+      // ignore: use_build_context_synchronously
       () => context.read<CommentProvider>().fetchComments(widget.post.id!),
     );
   }
